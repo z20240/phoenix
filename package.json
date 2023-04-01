@@ -1,0 +1,33 @@
+{
+  "name": "phoenix-les",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/phoenix.ts",
+  "scripts": {
+    "dev": "nodemon --watch 'src/**' --ext 'ts,json' --exec 'sh etc/build.sh'",
+    "build": "sh etc/build.sh",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "concurrently \"tsc -w\" \"sh ./etc/build.sh\""
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@tsconfig/recommended": "^1.0.2",
+    "@types/phoenix": "github:mafredri/phoenix-typings#main",
+    "@typescript-eslint/eslint-plugin": "^5.57.0",
+    "@typescript-eslint/parser": "^5.57.0",
+    "eslint": "^8.7.0",
+    "prettier": "^2.5.1",
+    "rimraf": "^4.4.1",
+    "ts-node": "^10.9.1",
+    "tslib": "^2.5.0",
+    "typescript": "^5.0.3"
+  },
+  "_moduleAliases": {
+    "@": "./src"
+  },
+  "dependencies": {
+    "concurrently": "^8.0.1",
+    "lodash": "^4.17.21"
+  }
+}
