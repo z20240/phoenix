@@ -1,15 +1,12 @@
-interface ITilingScreen {
-  screen: Screen;
-  id: number;
-}
-
 class TilingScreen implements ITilingScreen {
   static screenHashes: { [id: number]: TilingScreen } = {};
 
   screen: Screen;
+  spaces: TilingSpace[] = [];
   id: number;
   constructor(screen: Screen) {
     this.screen = screen;
+    this.spaces = this.screen.spaces().map((space) => TilingSpace.of(space));
     this.id = screen.hash();
   }
 
@@ -30,7 +27,7 @@ class TilingScreen implements ITilingScreen {
     this.screen.currentSpace()
       ? TilingSpace.of(this.screen.currentSpace()!)
       : undefined;
-  spaces = () => this.screen.spaces().map((space) => TilingSpace.of(space));
+
   windows = (options?: { visible: boolean }) =>
     this.screen.windows(options).map((window) => TilingWindow.of(window));
 
