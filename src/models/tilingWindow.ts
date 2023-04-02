@@ -1,16 +1,10 @@
-interface ITilingWindow {
-  window: Window;
-  id: number;
-  isStack: boolean;
-  lastFrame?: Rectangle;
-}
-
 class TilingWindow implements ITilingWindow {
   static windowHashes: { [id: number]: TilingWindow } = {};
 
   window: Window;
   id: number;
   isStack: boolean;
+  isFloating: boolean;
   lastFrame?: Rectangle;
   currentGrid?: Rectangle;
 
@@ -18,11 +12,10 @@ class TilingWindow implements ITilingWindow {
     this.window = window;
     this.id = window.hash();
     this.isStack = false;
+    this.isFloating = FLOATING_APPS.includes(window.app().name());
   }
 
   static of = (window: Window) => {
-    if (!window) return undefined;
-
     if (!TilingWindow.windowHashes[window.hash()])
       TilingWindow.windowHashes[window.hash()] = new TilingWindow(window);
 
@@ -170,9 +163,9 @@ class TilingWindow implements ITilingWindow {
     let f = this.window.frame();
     return `Window -> [${this.window.app().processIdentifier()}] ${this.window
       .app()
-      .name()} : ${this.window.title()}\n{x:${f.x}, y:${f.y}, width:${
-      f.width
-    }, height:${f.height}}\n`;
+      .name()} : \n{x:${f.x}, y:${f.y}, width:${f.width}, height:${
+      f.height
+    }}, isStack:${this.isStack}, isFloating:${this.isFloating}\n`;
   };
 
   proportionWidth = () => {
@@ -231,7 +224,10 @@ class TilingWindow implements ITilingWindow {
     this.lastFrame = undefined;
   };
 
-  toFullScreen = () => {
+  toFullScreen = (options?: { justMaximum: boolean }) => {
+    if (options?.justMaximum)
+      return this.toGrid({ y: 0, x: 0, width: 1, height: 1 });
+
     if (!isEqual(this.window.frame(), this.fullGridFrame())) {
       this.rememberFrame();
       return this.toGrid({ y: 0, x: 0, width: 1, height: 1 });
