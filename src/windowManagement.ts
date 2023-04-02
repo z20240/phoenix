@@ -40,6 +40,12 @@ class WindowManagement {
     });
   };
 
+  registerAppEvent = (callback: (window?: TilingWindow, app?: App) => void) => {
+    const window = this.currentWindow();
+    this.event.on('appDidLaunch', (app) => callback(window, app));
+    this.event.on('appDidShow', (app) => callback(window, app));
+  };
+
   arrangeAllWindows = () => {
     this.getSpaces().forEach((space) => {
       space.clearWorkspaces();

@@ -19,5 +19,6 @@ console.log(Space.all().map((space) => space.hash()));
 const windowManagement = new WindowManagement();
 
 windowManagement.registerStopDragEvent(windowManagement.arrangeWindowByDrag);
+windowManagement.registerAppEvent(() => windowManagement.arrangeAllWindows());
 
 keyBinding(windowManagement);
