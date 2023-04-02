@@ -5,34 +5,31 @@ class TilingWindow implements ITilingWindow {
   id: number;
   isStack: boolean;
   isFloating: boolean;
-  lastFrame?: Rectangle;
   currentGrid?: Rectangle;
+  lastPosition?: ArrangeGridMethod | '';
+  currentPosition?: ArrangeGridMethod | '';
 
   constructor(window: Window) {
     this.window = window;
     this.id = window.hash();
     this.isStack = false;
     this.isFloating = FLOATING_APPS.includes(window.app().name());
+    this.currentPosition = '';
   }
 
   static of = (window: Window) => {
-    if (!TilingWindow.windowHashes[window.hash()])
-      TilingWindow.windowHashes[window.hash()] = new TilingWindow(window);
+    if (!TilingWindow.windowHashes[window.hash()]) TilingWindow.windowHashes[window.hash()] = new TilingWindow(window);
 
     return TilingWindow.windowHashes[window.hash()];
   };
 
-  static focused = () =>
-    Window.focused() ? TilingWindow.of(Window.focused()!) : undefined;
+  static focused = () => (Window.focused() ? TilingWindow.of(Window.focused()!) : undefined);
 
-  static all = (options?: { visible: boolean }) =>
-    Window.all(options).map((window) => TilingWindow.of(window));
+  static all = (options?: { visible: boolean }) => Window.all(options).map((window) => TilingWindow.of(window));
 
-  static recent = () =>
-    Window.recent().map((window) => TilingWindow.of(window));
+  static recent = () => Window.recent().map((window) => TilingWindow.of(window));
 
-  others = (options?: { visible?: boolean; screen?: Screen }) =>
-    this.window.others(options).map((window) => TilingWindow.of(window));
+  others = (options?: { visible?: boolean; screen?: Screen }) => this.window.others(options).map((window) => TilingWindow.of(window));
 
   title = () => this.window.title();
   isMain = () => this.window.isMain();
@@ -48,16 +45,13 @@ class TilingWindow implements ITilingWindow {
   setTopLeft = (point: Point) => this.window.setTopLeft(point);
   setSize = (size: Size) => this.window.setSize(size);
   setFrame = (frame: Rectangle) => this.window.setFrame(frame);
-  setFullScreen = (fullScreen: boolean) =>
-    this.window.setFullScreen(fullScreen);
+  setFullScreen = (fullScreen: boolean) => this.window.setFullScreen(fullScreen);
   maximize = () => this.window.maximize();
   minimize = () => this.window.minimize();
   unminimize = () => this.window.unminimize();
-  neighbours = (direction: Phoenix.Direction) =>
-    this.window.neighbors(direction).map((window) => TilingWindow.of(window));
+  neighbours = (direction: Phoenix.Direction) => this.window.neighbors(direction).map((window) => TilingWindow.of(window));
   focus = () => this.window.focus();
-  focusClosestNeighbor = (direction: Phoenix.Direction) =>
-    this.window.focusClosestNeighbor(direction);
+  focusClosestNeighbor = (direction: Phoenix.Direction) => this.window.focusClosestNeighbor(direction);
   close = () => this.window.close();
 
   topLeft = () => this.window.topLeft();
@@ -105,10 +99,7 @@ class TilingWindow implements ITilingWindow {
       .map((w) => TilingWindow.of(w));
 
   screenFrame = (screen?: Screen) => {
-    return (
-      (screen !== null ? screen?.flippedVisibleFrame() : void 0) ||
-      this.window.screen().flippedVisibleFrame()
-    );
+    return (screen !== null ? screen?.flippedVisibleFrame() : void 0) || this.window.screen().flippedVisibleFrame();
   };
 
   getGrid = () => {
@@ -125,31 +116,15 @@ class TilingWindow implements ITilingWindow {
   };
 
   getBoxSize = () => {
-    return [
-      this.screenFrame().width / GRID_WIDTH,
-      this.screenFrame().height / GRID_HEIGHT,
-    ];
+    return [this.screenFrame().width / GRID_WIDTH, this.screenFrame().height / GRID_HEIGHT];
   };
 
   calculateGrid = ({ x, y, width, height }: Rectangle, screen?: Screen) => {
-    console.log(
-      '🚀 ~ file: tilingWindow.ts:139 ~ TilingWindow ~ width:',
-      width,
-      this.screenFrame(screen).width
-    );
-
     return {
-      y:
-        Math.round(y * this.screenFrame(screen).height) +
-        GAP_X +
-        this.screenFrame(screen).y,
-      x:
-        Math.round(x * this.screenFrame(screen).width) +
-        GAP_Y +
-        this.screenFrame(screen).x,
+      y: Math.round(y * this.screenFrame(screen).height) + GAP_X + this.screenFrame(screen).y,
+      x: Math.round(x * this.screenFrame(screen).width) + GAP_Y + this.screenFrame(screen).x,
       width: Math.round(width * this.screenFrame(screen).width) - 2.0 * GAP_X,
-      height:
-        Math.round(height * this.screenFrame(screen).height) - 2.0 * GAP_Y,
+      height: Math.round(height * this.screenFrame(screen).height) - 2.0 * GAP_Y,
     };
   };
 
@@ -161,9 +136,7 @@ class TilingWindow implements ITilingWindow {
 
   info = () => {
     let f = this.window.frame();
-    return `Window -> [${this.window.app().processIdentifier()}] ${this.window
-      .app()
-      .name()} : \n{x:${f.x}, y:${f.y}, width:${f.width}, height:${
+    return `Window -> [${this.window.app().processIdentifier()}] ${this.window.app().name()} : {x:${f.x}, y:${f.y}, width:${f.width}, height:${
       f.height
     }}, isStack:${this.isStack}, isFloating:${this.isFloating}\n`;
   };
@@ -194,18 +167,9 @@ class TilingWindow implements ITilingWindow {
     return this.setGrid(frame);
   };
 
-  getLeftWindows = () =>
-    this.window
-      .neighbors('west')
-      .filter((win) => win.topLeft().x < this.topLeft().x - 10);
+  getLeftWindows = () => this.window.neighbors('west').filter((win) => win.topLeft().x < this.topLeft().x - 10);
 
-  getRightWindows = () =>
-    this.window
-      .neighbors('east')
-      .filter(
-        (win) =>
-          TilingWindow.of(win)?.topRight()?.x || 0 > this.topRight().x + 10
-      );
+  getRightWindows = () => this.window.neighbors('east').filter((win) => TilingWindow.of(win)?.topRight()?.x || 0 > this.topRight().x + 10);
 
   fullGridFrame = () => {
     return this.calculateGrid({
@@ -216,24 +180,35 @@ class TilingWindow implements ITilingWindow {
     } as Rectangle);
   };
 
-  rememberFrame = () => {
-    return (this.lastFrame = this.window.frame());
+  toFullScreen = () => {
+    this.currentPosition = ArrangeGridMethod.toFullScreen;
+    return this.toGrid({ y: 0, x: 0, width: 1, height: 1 });
   };
 
-  forgetFrame = () => {
-    this.lastFrame = undefined;
+  toggleMaximize = () => {
+    if (this.currentPosition !== ArrangeGridMethod.toFullScreen) {
+      this.lastPosition = this.currentPosition;
+      return this.toFullScreen();
+    } else {
+      return !this.lastPosition ? this.toLeftHalf() : this[this.lastPosition]();
+    }
   };
 
-  toFullScreen = (options?: { justMaximum: boolean }) => {
-    if (options?.justMaximum)
-      return this.toGrid({ y: 0, x: 0, width: 1, height: 1 });
-
-    if (!isEqual(this.window.frame(), this.fullGridFrame())) {
-      this.rememberFrame();
-      return this.toGrid({ y: 0, x: 0, width: 1, height: 1 });
-    } else if (this.lastFrame) {
-      this.window.setFrame(this.lastFrame);
-      return this.forgetFrame();
+  toggleToFloatingWindow = () => {
+    if (this.isFloating) {
+      this.isFloating = false;
+      const currentSpace = TilingSpace.of(Space.active()!);
+      currentSpace.clearWorkspaces();
+      currentSpace.arrangeAllWindowsInWorkspaces(currentSpace.getVisibleWindows());
+      currentSpace.arrangeAllWindowsToGrid();
+    } else {
+      this.isFloating = true;
+      const workspace = TilingSpace.of(Space.active()!).getWorkspaceByWindow(this);
+      workspace?.splice(
+        workspace.findIndex((win) => win.id === this.id),
+        1
+      );
+      this.toCenterWithBorder();
     }
   };
 
@@ -266,18 +241,23 @@ class TilingWindow implements ITilingWindow {
     if (this.isNormal()) return this.setGrid(this.getGrid());
   };
   toTopHalf = () => {
+    this.currentPosition = ArrangeGridMethod.toTopHalf;
     return this.toGrid({ x: 0, y: 0, width: 1, height: 0.5 });
   };
   toBottomHalf = () => {
+    this.currentPosition = ArrangeGridMethod.toBottomHalf;
     return this.toGrid({ x: 0, y: 0.5, width: 1, height: 0.5 });
   };
   toLeftHalf = () => {
+    this.currentPosition = ArrangeGridMethod.toLeftHalf;
     return this.toGrid({ x: 0, y: 0, width: 0.5, height: 1 });
   };
   toRightHalf = () => {
+    this.currentPosition = ArrangeGridMethod.toRightHalf;
     return this.toGrid({ x: 0.5, y: 0, width: 0.5, height: 1 });
   };
   toLeftToggle = () => {
+    this.currentPosition = ArrangeGridMethod.toLeftToggle;
     return this.toGrid({
       x: 0,
       y: 0,
@@ -286,6 +266,7 @@ class TilingWindow implements ITilingWindow {
     });
   };
   toRightToggle = () => {
+    this.currentPosition = ArrangeGridMethod.toRightToggle;
     return this.toGrid({
       x: 1 - this.togglingWidth(),
       y: 0,
@@ -294,18 +275,23 @@ class TilingWindow implements ITilingWindow {
     });
   };
   toTopRight = () => {
+    this.currentPosition = ArrangeGridMethod.toTopRight;
     return this.toGrid({ x: 0.5, y: 0, width: 0.5, height: 0.5 });
   };
   toBottomRight = () => {
+    this.currentPosition = ArrangeGridMethod.toBottomRight;
     return this.toGrid({ x: 0.5, y: 0.5, width: 0.5, height: 0.5 });
   };
   toTopLeft = () => {
+    this.currentPosition = ArrangeGridMethod.toTopLeft;
     return this.toGrid({ x: 0, y: 0, width: 0.5, height: 0.5 });
   };
   toBottomLeft = () => {
+    this.currentPosition = ArrangeGridMethod.toBottomLeft;
     return this.toGrid({ x: 0, y: 0.5, width: 0.5, height: 0.5 });
   };
   toCenterWithBorder = (border = 1) => {
+    this.currentPosition = ArrangeGridMethod.toCenterWithBorder;
     let [boxWidth, boxHeight] = this.getBoxSize();
     let rect = {
       x: border,

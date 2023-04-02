@@ -1,12 +1,3 @@
-type ArrangeGridMethod =
-  | 'toFullScreen'
-  | 'toLeftHalf'
-  | 'toRightHalf'
-  | 'toTopRight'
-  | 'toBottomRight'
-  | 'toTopLeft'
-  | 'toBottomLeft';
-
 class TilingSpace implements ITilingSpace {
   static spaceHashes: { [id: number]: TilingSpace } = {};
 
@@ -14,30 +5,56 @@ class TilingSpace implements ITilingSpace {
   space: Space;
   workspace1: TilingWindow[] = [];
   workspace2: TilingWindow[] = [];
-  workspace3: TilingWindow[] = [];
-  workspace4: TilingWindow[] = [];
+  screenCenterPoint: Point = {} as Point;
 
   constructor(Space: Space) {
     this.space = Space;
     this.id = Space.hash();
+    this._setRectAreaToEachWorkspace();
   }
 
   static of = (space: Space) => {
-    if (!TilingSpace.spaceHashes[space.hash()])
-      TilingSpace.spaceHashes[space.hash()] = new TilingSpace(space);
+    if (!TilingSpace.spaceHashes[space.hash()]) TilingSpace.spaceHashes[space.hash()] = new TilingSpace(space);
 
     return TilingSpace.spaceHashes[space.hash()];
   };
 
+  static getSpaceByHash = (hash: number) => TilingSpace.spaceHashes[hash];
+
   isNormal = () => this.space.isNormal();
   isFullScreen = () => this.space.isFullScreen();
   screens = () => this.space.screens().map((screen) => TilingScreen.of(screen));
-  windows = (options?: { visible: boolean }) =>
-    this.space.windows(options).map((window) => TilingWindow.of(window));
+  windows = (options?: { visible: boolean }) => this.space.windows(options).map((window) => TilingWindow.of(window));
   moveWindows = (windows: Window[]) => this.space.moveWindows(windows);
+  getVisibleWindows = () => this.windows().filter((win) => !win.isFloating && !win.isMinimized());
 
-  getVisibleWindows = () =>
-    this.windows().filter((win) => !win.isFloating && !win.isMinimized());
+  focusLeft = () => {
+    Window.at({ x: this.screenCenterPoint.x - GAP_X * 2, y: this.screenCenterPoint.y })?.focus();
+  };
+
+  focusRight = () => {
+    Window.at({ x: this.screenCenterPoint.x + GAP_X * 2, y: this.screenCenterPoint.y })?.focus();
+  };
+
+  focusPrevWindowInWorkspace = (window: TilingWindow) => {
+    const workspace = this.getWorkspaceByWindow(window);
+
+    if (!workspace) return;
+
+    const index = workspace.findIndex((win) => win.id === window.id);
+
+    workspace[index - 1 < 0 ? workspace.length - 1 : index - 1]?.focus();
+  };
+
+  focusNextWindowInWorkspace = (window: TilingWindow) => {
+    const workspace = this.getWorkspaceByWindow(window);
+
+    if (!workspace) return;
+
+    const index = workspace.findIndex((win) => win.id === window.id);
+
+    workspace[index + 1 > workspace.length - 1 ? 0 : index + 1]?.focus();
+  };
 
   arrangeAllWindowsInWorkspaces = (windows: TilingWindow[]) => {
     // if no workspace is passed, arrange windows in workspace1 and workspace2
@@ -47,43 +64,37 @@ class TilingSpace implements ITilingSpace {
   };
 
   arrangeAllWindowsToGrid = () => {
-    const windows = this.getVisibleWindows();
-
-    // // if only one window, make it full screen.
-    // if (windows.length === 1) return windows[0].toFullScreen();
-
     switch (this._hasWindowsInWorkspaces()) {
       case '1':
         return this._setArrangeWindowsInWorkspace([this.workspace1]);
       case '1,2':
-        return this._setArrangeWindowsInWorkspace([
-          this.workspace1,
-          this.workspace2,
-        ]);
-      case '1,2,3':
-        return this._setArrangeWindowsInWorkspace([
-          this.workspace1,
-          this.workspace2,
-          this.workspace3,
-        ]);
-      case '1,2,3,4':
-        return this._setArrangeWindowsInWorkspace([
-          this.workspace1,
-          this.workspace2,
-          this.workspace3,
-          this.workspace4,
-        ]);
-
+        return this._setArrangeWindowsInWorkspace([this.workspace1, this.workspace2]);
       default:
         return false;
+    }
+  };
+
+  inWorkspaceArea = (point: Point) => {
+    const { x } = point;
+    const { x: centerX } = this.screenCenterPoint;
+
+    if (x < centerX || !this.workspace1.length) return this.workspace1;
+
+    return this.workspace2;
+  };
+
+  removeWindowFromWorkspace = (window: TilingWindow) => {
+    const workspace = this.getWorkspaceByWindow(window);
+
+    if (workspace) {
+      const index = workspace.findIndex((win) => win.id === window.id);
+      workspace.splice(index, 1);
     }
   };
 
   clearWorkspaces = () => {
     this.workspace1 = [];
     this.workspace2 = [];
-    this.workspace3 = [];
-    this.workspace4 = [];
   };
 
   info = () => {
@@ -94,17 +105,11 @@ class TilingSpace implements ITilingSpace {
     const hasWorkspace = [];
     if (this.workspace1.length) hasWorkspace.push(1);
     if (this.workspace2.length) hasWorkspace.push(2);
-    if (this.workspace3.length) hasWorkspace.push(3);
-    if (this.workspace4.length) hasWorkspace.push(4);
     return hasWorkspace.join(',');
   };
 
   // arrange windows in workspace to grid
-  _arrangeToGrid = (
-    workspace: TilingWindow[],
-    windowCallback: ArrangeGridMethod,
-    ...args: any[]
-  ) => {
+  _arrangeToGrid = (workspace: TilingWindow[], windowCallback: ArrangeGridMethod, ...args: any) => {
     for (let i = 0; i < workspace.length; i++) {
       const win = workspace[i];
       win.isStack = workspace.length > 1;
@@ -113,31 +118,27 @@ class TilingSpace implements ITilingSpace {
     return true;
   };
 
+  getWorkspaceByWindow = (window: TilingWindow) => {
+    if (this.workspace1.includes(window)) return this.workspace1;
+    if (this.workspace2.includes(window)) return this.workspace2;
+    return null;
+  };
+
+  _setRectAreaToEachWorkspace = () => {
+    const screen = this.space.screens()[0];
+    const screenFrame = screen.flippedVisibleFrame();
+    const [centerWidth, centerHeight] = [Math.round(screenFrame.width / 2), Math.round(screenFrame.height / 2)];
+    this.screenCenterPoint = { x: screenFrame.x + centerWidth, y: screenFrame.y + centerHeight };
+  };
+
   _setArrangeWindowsInWorkspace = (workspaces: TilingWindow[][]) => {
     if (workspaces.length === 1) {
-      return this._arrangeToGrid(workspaces[0], 'toFullScreen', {
-        justMaximum: true,
-      });
+      return this._arrangeToGrid(workspaces[0], ArrangeGridMethod.toFullScreen);
     }
 
     if (workspaces.length === 2) {
-      this._arrangeToGrid(workspaces[0], 'toLeftHalf');
-      this._arrangeToGrid(workspaces[1], 'toRightHalf');
-      return true;
-    }
-
-    if (workspaces.length === 3) {
-      this._arrangeToGrid(workspaces[0], 'toLeftHalf');
-      this._arrangeToGrid(workspaces[1], 'toTopRight');
-      this._arrangeToGrid(workspaces[2], 'toBottomRight');
-      return true;
-    }
-
-    if (workspaces.length === 4) {
-      this._arrangeToGrid(workspaces[0], 'toTopLeft');
-      this._arrangeToGrid(workspaces[1], 'toTopRight');
-      this._arrangeToGrid(workspaces[2], 'toBottomRight');
-      this._arrangeToGrid(workspaces[3], 'toBottomLeft');
+      this._arrangeToGrid(workspaces[0], ArrangeGridMethod.toLeftHalf);
+      this._arrangeToGrid(workspaces[1], ArrangeGridMethod.toRightHalf);
       return true;
     }
   };

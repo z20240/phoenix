@@ -1,15 +1,68 @@
 class WindowManagement {
-  screens: TilingScreen[] = [];
-  spaces: TilingSpace[] = [];
-  windows: TilingWindow[] = [];
-  constructor() {}
+  event: EventObject;
+  constructor() {
+    this.event = Event;
+  }
 
-  currentWindow = () =>
-    Window.focused() ? TilingWindow.of(Window.focused()!) : undefined;
-  currentSpace = () =>
-    Space.active() ? TilingSpace.of(Space.active()!) : undefined;
+  currentWindow = () => (Window.focused() ? TilingWindow.of(Window.focused()!) : undefined);
+  currentSpace = () => (Space.active() ? TilingSpace.of(Space.active()!) : undefined);
   currentScreen = () => TilingScreen.of(Screen.main());
   visibleWindow = () => Window.all().filter((w) => (w ? w.isVisible() : false));
+  on = (event: Phoenix.Event, callback: (handler: Event) => void) => this.event.on(event, callback);
+  getSpaces = () => Space.all().map((space) => TilingSpace.of(space));
+  getWindows = () => Window.all().map((window) => TilingWindow.of(window));
+  getScreen = () => Screen.all().map((screen) => TilingScreen.of(screen));
+
+  registerStopDragEvent = (callback: (prevSpace: TilingSpace, currentSpace: TilingSpace, window: TilingWindow, point: Point) => void) => {
+    let mouseDragTimer: any = null,
+      windowMovedTimer: any = null;
+    let isDrag = false;
+
+    this.event.on('mouseDidLeftDrag', (point) => {
+      isDrag = true;
+      this.event.on('windowDidMove', (window) => {
+        clearTimeout(windowMovedTimer);
+
+        const prevSpace = this.currentSpace()!;
+        windowMovedTimer = setTimeout(() => {
+          // set stop drag
+          if (isDrag) {
+            console.log('---> is Stop Draged');
+            const currentSpace = this.currentSpace()!;
+            const currentWindow = TilingWindow.of(window);
+            callback(prevSpace, currentSpace, currentWindow, point);
+          }
+        }, 500);
+      });
+
+      clearTimeout(mouseDragTimer);
+      mouseDragTimer = setTimeout(() => (isDrag = false), 600);
+    });
+  };
+
+  arrangeAllWindows = () => {
+    this.getSpaces().forEach((space) => {
+      space.clearWorkspaces();
+
+      const windows = space.getVisibleWindows();
+
+      space.arrangeAllWindowsInWorkspaces(windows);
+      space.arrangeAllWindowsToGrid();
+    });
+
+    for (let space of Space.all()) {
+      console.log('Space ---->', space.hash());
+      for (let window of space.windows()) {
+        console.log('Window -> ', window.app().name());
+      }
+    }
+  };
+
+  /** toggle to maximized the window or not */
+  toggleMaximizeWindow = () => this.currentWindow()?.toggleMaximize();
+
+  /** toggle to float the window or not */
+  toggleToFloatingWindow = () => this.currentWindow()?.toggleToFloatingWindow();
 
   /** move window to top half */
   moveWindowToTopHalf = () => this.currentWindow()?.toTopHalf();
@@ -63,28 +116,28 @@ class WindowManagement {
   moveWindowToNextScreen = () => {
     const currentScreen = Screen.main();
     const nextScreen = currentScreen.next();
+
+    TilingSpace.of(currentScreen.currentSpace()!).removeWindowFromWorkspace(this.currentWindow()!);
+
     nextScreen.currentSpace()?.moveWindows([this.currentWindow()!.window]);
 
-    if (this.currentWindow()?.currentGrid) {
-      this.currentWindow()?.toGrid(
-        this.currentWindow()?.currentGrid!,
-        nextScreen
-      );
-    }
+    const tSpace = TilingSpace.of(nextScreen.currentSpace()!);
+    tSpace.arrangeAllWindowsInWorkspaces(tSpace.getVisibleWindows());
+    tSpace.arrangeAllWindowsToGrid();
   };
 
   /** move window to previous screen */
   moveWindowToPreviousScreen = () => {
     const currentScreen = Screen.main();
     const lastScreen = currentScreen.previous();
+
+    TilingSpace.of(currentScreen.currentSpace()!).removeWindowFromWorkspace(this.currentWindow()!);
+
     lastScreen.currentSpace()?.moveWindows([this.currentWindow()!.window]);
 
-    if (this.currentWindow()?.currentGrid) {
-      this.currentWindow()?.toGrid(
-        this.currentWindow()?.currentGrid!,
-        lastScreen
-      );
-    }
+    const tSpace = TilingSpace.of(lastScreen.currentSpace()!);
+    tSpace.arrangeAllWindowsInWorkspaces(tSpace.getVisibleWindows());
+    tSpace.arrangeAllWindowsToGrid();
   };
 
   /** move window to next space */
@@ -92,12 +145,19 @@ class WindowManagement {
     const currentSpace = Space.active();
     let nextSpace = currentSpace?.next();
 
+    TilingSpace.of(currentSpace!).removeWindowFromWorkspace(this.currentWindow()!);
+
     if (nextSpace?.screens()[0] !== currentSpace?.screens()[0]) {
-      nextSpace = this.currentScreen()?.spaces()[0].space;
+      nextSpace = this.currentScreen()?.spaces[0].space;
     }
 
     nextSpace?.moveWindows([this.currentWindow()!.window]);
     this.currentWindow()?.focus();
+
+    this.arrangeAllWindows();
+
+    this.currentSpace()?.arrangeAllWindowsInWorkspaces(this.currentSpace()?.getVisibleWindows()!);
+    this.currentSpace()?.arrangeAllWindowsToGrid();
   };
 
   /** move window to previous space */
@@ -105,23 +165,57 @@ class WindowManagement {
     const currentSpace = Space.active();
     let lastSpace = currentSpace?.previous();
 
+    TilingSpace.of(currentSpace!).removeWindowFromWorkspace(this.currentWindow()!);
+
     if (lastSpace?.screens()[0] !== currentSpace?.screens()[0]) {
-      lastSpace =
-        this.currentScreen()?.spaces()[
-          this.currentScreen()!.spaces().length - 1
-        ].space;
+      lastSpace = this.currentScreen()?.spaces[this.currentScreen()!.spaces.length - 1].space;
     }
 
     lastSpace?.moveWindows([this.currentWindow()!.window]);
     this.currentWindow()?.focus();
+
+    this.arrangeAllWindows();
+
+    this.currentSpace()?.arrangeAllWindowsInWorkspaces(this.currentSpace()?.getVisibleWindows()!);
+    this.currentSpace()?.arrangeAllWindowsToGrid();
   };
 
+  /** mouse move window to next workspace */
+  arrangeWindowByDrag = (oldSpace: TilingSpace, newSpace: TilingSpace, currentWindow: TilingWindow, point: Point) => {
+    this.arrangeAllWindows();
+
+    oldSpace.removeWindowFromWorkspace(currentWindow);
+
+    if (!oldSpace.workspace1.length && oldSpace.workspace2.length) {
+      oldSpace.workspace1 = oldSpace.workspace2;
+      oldSpace.workspace2 = [];
+    }
+
+    const workspace = newSpace.inWorkspaceArea(point);
+
+    if (workspace) workspace.push(currentWindow);
+
+    newSpace.arrangeAllWindowsToGrid();
+  };
+
+  /** focus left */
+  focusLeft = () => this.currentSpace()?.focusLeft();
+
+  /** focus right */
+  focusRight = () => this.currentSpace()?.focusRight();
+
+  /** focus previous window in workspace */
+  focusPrevWindowInWorkspace = () => this.currentSpace()?.focusPrevWindowInWorkspace(this.currentWindow()!);
+
+  /** focus next window in workspace */
+  focusNextWindowInWorkspace = () => this.currentSpace()?.focusNextWindowInWorkspace(this.currentWindow()!);
+
+  // ----  functional methods ----
+
+  /** binding the stortcut. */
   bindKey = (
     _description: string,
-    {
-      key,
-      combination,
-    }: { key: Phoenix.KeyIdentifier; combination: Phoenix.ModifierKey[] },
+    { key, combination }: { key: Phoenix.KeyIdentifier; combination: Phoenix.ModifierKey[] },
     callback: () => void
   ) => {
     Key.on(key, combination, callback);

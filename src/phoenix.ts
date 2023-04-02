@@ -1,4 +1,5 @@
 require('./config.js');
+require('./constants.js');
 require('./utils.js');
 require('./models/tilingWindow.js');
 require('./models/tilingSpace.js');
@@ -17,6 +18,6 @@ console.log(Space.all().map((space) => space.hash()));
 
 const windowManagement = new WindowManagement();
 
-windowManagement.registerStopDragEvent((window, point) => {});
+windowManagement.registerStopDragEvent(windowManagement.arrangeWindowByDrag);
 
 keyBinding(windowManagement);

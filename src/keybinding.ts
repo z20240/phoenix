@@ -10,27 +10,30 @@ const KeyBindingConfig: IKeyBindingConfig[] = [
   {
     description: 'Maximize the window',
     keybinding: 'up - cmd+alt',
-    action: () => windowManagement.maximizeWindow(),
-  },
-  {
-    description: 'Maximize the window',
-    keybinding: 'up - cmd+alt',
-    action: () => windowManagement.maximizeWindow(),
+    action: () => {
+      windowManagement.currentWindow()?.isFloating ? windowManagement.maximizeWindow() : windowManagement.focusPrevWindowInWorkspace();
+    },
   },
   {
     description: 'Move window to center border',
     keybinding: 'down - cmd+alt',
-    action: () => windowManagement.moveWindowToCenterBorder(),
+    action: () => {
+      windowManagement.currentWindow()?.isFloating ? windowManagement.moveWindowToCenterBorder() : windowManagement.focusNextWindowInWorkspace();
+    },
   },
   {
     description: 'Move window to center border',
     keybinding: 'left - cmd+alt',
-    action: () => windowManagement.moveWindowToLeftHalf(),
+    action: () => {
+      windowManagement.currentWindow()?.isFloating ? windowManagement.moveWindowToLeftHalf() : windowManagement.focusLeft();
+    },
   },
   {
     description: 'Move window to center border',
     keybinding: 'right - cmd+alt',
-    action: () => windowManagement.moveWindowToRightHalf(),
+    action: () => {
+      windowManagement.currentWindow()?.isFloating ? windowManagement.moveWindowToRightHalf() : windowManagement.focusRight();
+    },
   },
   {
     description: 'toggle to adjust window to Left side',
@@ -65,7 +68,12 @@ const KeyBindingConfig: IKeyBindingConfig[] = [
   {
     description: 'Maximize Window',
     keybinding: 'space - cmd+alt',
-    action: () => windowManagement.maximizeWindow(),
+    action: () => windowManagement.toggleMaximizeWindow(),
+  },
+  {
+    description: 'Maximize Window',
+    keybinding: 'space - ctrl+cmd+alt',
+    action: () => windowManagement.toggleToFloatingWindow(),
   },
   {
     description: 'To Next Screen',
@@ -119,9 +127,7 @@ const keyBinding = (windowManagement: WindowManagement) => {
     const { description, keybinding, action } = keyBinding;
     const [keyIdentifier, modifiers] = keybinding.split(' - ');
     const key = keyIdentifier.trim() as Phoenix.KeyIdentifier;
-    const combination = modifiers
-      .split('+')
-      .map((m) => m.trim()) as Phoenix.ModifierKey[];
+    const combination = modifiers.split('+').map((m) => m.trim()) as Phoenix.ModifierKey[];
     windowManagement.bindKey(description, { key, combination }, action);
   });
 };
