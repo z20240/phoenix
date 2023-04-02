@@ -1,5 +1,4 @@
 require('./config.js');
-require('./logger.js');
 require('./utils.js');
 require('./models/tilingWindow.js');
 require('./models/tilingSpace.js');
@@ -20,86 +19,116 @@ const windowManagement = new WindowManagement();
 const cmd_opt = ['cmd', 'alt'] as Phoenix.ModifierKey[];
 const ctrl_cmd = ['ctrl', 'cmd'] as Phoenix.ModifierKey[];
 const ctrl_opt = ['ctrl', 'alt'] as Phoenix.ModifierKey[];
+const ctrl_opt_cmd = ['ctrl', 'alt', 'cmd'] as Phoenix.ModifierKey[];
 
-windowManagement.bindKey('up', cmd_opt, 'Top Half', () =>
-  windowManagement.currentWindow()?.toTopHalf()
-);
-windowManagement.bindKey('down', cmd_opt, 'Bottom Half', () =>
-  windowManagement.currentWindow()?.toBottomHalf()
-);
-windowManagement.bindKey('left', cmd_opt, 'Left side toggle', () =>
-  windowManagement.currentWindow()?.toLeftToggle()
-);
-windowManagement.bindKey('right', cmd_opt, 'Right side toggle', () =>
-  windowManagement.currentWindow()?.toRightToggle()
-);
-
-windowManagement.bindKey('C', cmd_opt, 'Center with border', () =>
-  windowManagement.currentWindow()?.toCenterWithBorder(1)
-);
-windowManagement.bindKey('Q', cmd_opt, 'Top Left', () =>
-  windowManagement.currentWindow()?.toTopLeft()
-);
-windowManagement.bindKey('A', cmd_opt, 'Bottom Left', () =>
-  windowManagement.currentWindow()?.toBottomLeft()
-);
-windowManagement.bindKey('W', cmd_opt, 'Top Right', () =>
-  windowManagement.currentWindow()?.toTopRight()
-);
-windowManagement.bindKey('S', cmd_opt, 'Bottom Right', () =>
-  windowManagement.currentWindow()?.toBottomRight()
-);
-windowManagement.bindKey('z', cmd_opt, 'Right Half', () =>
-  windowManagement.currentWindow()?.toLeftHalf()
-);
-windowManagement.bindKey('x', cmd_opt, 'Left Half', () =>
-  windowManagement.currentWindow()?.toRightHalf()
-);
-windowManagement.bindKey('space', cmd_opt, 'Maximize Window', () =>
-  windowManagement.currentWindow()?.toFullScreen()
+windowManagement.bindKey(
+  'Maximize the window',
+  { key: 'up', combination: cmd_opt },
+  () => windowManagement.maximizeWindow()
 );
 windowManagement.bindKey(
-  'right',
-  ctrl_opt,
+  'Move window to center border',
+  { key: 'down', combination: cmd_opt },
+  () => windowManagement.moveWindowToCenterBorder()
+);
+windowManagement.bindKey(
+  'Move window to center border',
+  { key: 'left', combination: cmd_opt },
+  () => windowManagement.moveWindowToLeftHalf()
+);
+windowManagement.bindKey(
+  'Move window to center border',
+  { key: 'right', combination: cmd_opt },
+  () => windowManagement.moveWindowToRightHalf()
+);
+windowManagement.bindKey(
+  'toggle to adjust window to Left side',
+  { key: 'home', combination: cmd_opt },
+  () => windowManagement.toggleLeftSide()
+);
+windowManagement.bindKey(
+  'toggle to adjust window to Right side',
+  { key: 'end', combination: cmd_opt },
+  () => windowManagement.toggleRightSide()
+);
+windowManagement.bindKey(
+  'Move window to Top Left',
+  { key: 'Q', combination: cmd_opt },
+  () => windowManagement.moveWindowToTopLeft()
+);
+windowManagement.bindKey(
+  'Move window to Bottom Left',
+  { key: 'A', combination: cmd_opt },
+  () => windowManagement.moveWindowToBottomLeft()
+);
+windowManagement.bindKey(
+  'Move window to Top Right',
+  { key: 'W', combination: cmd_opt },
+  () => windowManagement.moveWindowToTopRight()
+);
+windowManagement.bindKey(
+  'Move window to Bottom Right',
+  { key: 'S', combination: cmd_opt },
+  () => windowManagement.moveWindowToBottomRight()
+);
+windowManagement.bindKey(
+  'Maximize Window',
+  { key: 'space', combination: cmd_opt },
+  () => windowManagement.maximizeWindow()
+);
+windowManagement.bindKey(
   'To Next Screen',
-  windowManagement.moveWindowToNextScreen
+  { key: 'right', combination: ctrl_opt },
+  () => windowManagement.moveWindowToNextScreen()
 );
 windowManagement.bindKey(
-  'left',
-  ctrl_opt,
   'To Previous Screen',
-  windowManagement.moveWindowToPreviousScreen
+  { key: 'left', combination: ctrl_opt },
+  () => windowManagement.moveWindowToPreviousScreen()
 );
 windowManagement.bindKey(
-  'right',
-  ctrl_cmd,
   'To Next Space',
-  windowManagement.moveWindowToNextSpace
+  { key: 'right', combination: ctrl_cmd },
+  () => windowManagement.moveWindowToNextSpace()
 );
 windowManagement.bindKey(
-  'left',
-  ctrl_cmd,
   'To Previous Space',
-  windowManagement.moveWindowToPrevSpace
+  { key: 'left', combination: ctrl_cmd },
+  () => windowManagement.moveWindowToPrevSpace()
 );
-// windowManagement.bindKey('=', mash, 'Increase Grid Columns', () =>
-//   changeGridWidth(+1)
-// );
-// windowManagement.bindKey('-', mash, 'Reduce Grid Columns', () =>
-//   changeGridWidth(-1)
-// );
-// windowManagement.bindKey(']', mash, 'Increase Grid Rows', () =>
-//   changeGridHeight(+1)
-// );
-// windowManagement.bindKey('[', mash, 'Reduce Grid Rows', () =>
-//   changeGridHeight(-1)
-// );
+windowManagement.bindKey(
+  'Increase Grid Columns',
+  { key: 'end', combination: ctrl_opt_cmd },
+  () => windowManagement.extendGridWidth()
+);
+windowManagement.bindKey(
+  'Reduce Grid Columns',
+  { key: 'home', combination: ctrl_opt_cmd },
+  () => windowManagement.reduceGridWidth()
+);
+windowManagement.bindKey(
+  'Increase Grid Rows',
+  { key: 'pageDown', combination: ctrl_opt_cmd },
+  () => {
+    console.log('--> key: pageup');
+    windowManagement.extendGridHeight();
+  }
+);
+windowManagement.bindKey(
+  'Reduce Grid Rows',
+  { key: 'pageUp', combination: ctrl_opt_cmd },
+  () => windowManagement.reduceGridHeight()
+);
 
-windowManagement.bindKey(';', cmd_opt, 'Snap all to grid', () => {
-  windowManagement
-    .visibleWindow()
-    .map((win) => TilingWindow.of(win)?.snapToGrid());
-});
+windowManagement.bindKey(
+  'Snap all to grid',
+  { key: ';', combination: cmd_opt },
+  () => {
+    windowManagement
+      .visibleWindow()
+      .map((win) => TilingWindow.of(win)?.snapToGrid());
+  }
+);
 // windowManagement.bindKey(
 //   'I',
 //   mash,

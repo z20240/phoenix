@@ -107,7 +107,9 @@ class TilingWindow implements ITilingWindow {
   };
 
   visibles = () =>
-    Window.all().filter((w) => (w !== undefined ? w.isVisible() : false));
+    Window.all()
+      .filter((w) => (w !== undefined ? w.isVisible() : false))
+      .map((w) => TilingWindow.of(w));
 
   screenFrame = (screen?: Screen) => {
     return (
@@ -125,7 +127,7 @@ class TilingWindow implements ITilingWindow {
       width: Math.max(1, Math.round(frame.width / boxWidth)),
       height: Math.max(1, Math.round(frame.height / boxHeight)),
     } as Rectangle;
-    log(`Window grid: ${grid}`);
+    console.log(`Window grid: ${JSON.stringify(grid)}`);
     return grid;
   };
 
@@ -180,12 +182,31 @@ class TilingWindow implements ITilingWindow {
     return Math.round((w_w / s_w) * 10) / 10;
   };
 
-  leftWindows = () =>
+  snapAllToGrid = () => {
+    this.visibles().map((window) => window!.snapToGrid());
+  };
+
+  changeGridWidth = (n: number) => {
+    let frame = this.getGrid();
+    if (n > 0) frame.width = Math.min(frame.width + n, GRID_WIDTH);
+    else frame.width = Math.max(frame.width + n, 1);
+
+    return this.setGrid(frame);
+  };
+
+  changeGridHeight = (n: number) => {
+    let frame = this.getGrid();
+    if (n > 0) frame.height = Math.min(frame.height + n, GRID_HEIGHT);
+    else frame.height = Math.max(frame.height + n, 1);
+    return this.setGrid(frame);
+  };
+
+  getLeftWindows = () =>
     this.window
       .neighbors('west')
       .filter((win) => win.topLeft().x < this.topLeft().x - 10);
 
-  rightWindows = () =>
+  getRightWindows = () =>
     this.window
       .neighbors('east')
       .filter(
@@ -246,9 +267,7 @@ class TilingWindow implements ITilingWindow {
 
   /** setting grid */
   snapToGrid = () => {
-    if (this.isNormal()) {
-      return this.setGrid(this.getGrid());
-    }
+    if (this.isNormal()) return this.setGrid(this.getGrid());
   };
   toTopHalf = () => {
     return this.toGrid({ x: 0, y: 0, width: 1, height: 0.5 });
