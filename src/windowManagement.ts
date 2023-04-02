@@ -43,19 +43,13 @@ class WindowManagement {
   arrangeAllWindows = () => {
     this.getSpaces().forEach((space) => {
       space.clearWorkspaces();
+      space.resetWindowsMode();
 
       const windows = space.getVisibleWindows();
 
       space.arrangeAllWindowsInWorkspaces(windows);
       space.arrangeAllWindowsToGrid();
     });
-
-    for (let space of Space.all()) {
-      console.log('Space ---->', space.hash());
-      for (let window of space.windows()) {
-        console.log('Window -> ', window.app().name());
-      }
-    }
   };
 
   /** toggle to maximized the window or not */
@@ -209,6 +203,18 @@ class WindowManagement {
 
   /** focus next window in workspace */
   focusNextWindowInWorkspace = () => this.currentSpace()?.focusNextWindowInWorkspace(this.currentWindow()!);
+
+  /** swap the workspace to left */
+  swapToLeft = () => this.currentSpace()?.swapToLeft(this.currentWindow()!);
+
+  /** swap the workspace to right */
+  swapToRight = () => this.currentSpace()?.swapToRight(this.currentWindow()!);
+
+  /** insert the workspace to left */
+  insertToLeft = () => this.currentSpace()?.insertToLeft(this.currentWindow()!);
+
+  /** insert the workspace to right */
+  insertToRight = () => this.currentSpace()?.insertToRight(this.currentWindow()!);
 
   // ----  functional methods ----
 

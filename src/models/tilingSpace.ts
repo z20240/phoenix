@@ -7,9 +7,9 @@ class TilingSpace implements ITilingSpace {
   workspace2: TilingWindow[] = [];
   screenCenterPoint: Point = {} as Point;
 
-  constructor(Space: Space) {
-    this.space = Space;
-    this.id = Space.hash();
+  constructor(space: Space) {
+    this.space = space;
+    this.id = space.hash();
     this._setRectAreaToEachWorkspace();
   }
 
@@ -29,15 +29,18 @@ class TilingSpace implements ITilingSpace {
   getVisibleWindows = () => this.windows().filter((win) => !win.isFloating && !win.isMinimized());
 
   focusLeft = () => {
-    Window.at({ x: this.screenCenterPoint.x - GAP_X * 2, y: this.screenCenterPoint.y })?.focus();
+    console.log('--> window');
+    Window.at({ x: this.screenCenterPoint.x - GAP_X * 5, y: this.screenCenterPoint.y })?.focus();
   };
 
   focusRight = () => {
-    Window.at({ x: this.screenCenterPoint.x + GAP_X * 2, y: this.screenCenterPoint.y })?.focus();
+    Window.at({ x: this.screenCenterPoint.x + GAP_X * 5, y: this.screenCenterPoint.y })?.focus();
   };
 
   focusPrevWindowInWorkspace = (window: TilingWindow) => {
-    const workspace = this.getWorkspaceByWindow(window);
+    const currentSpace = TilingSpace.of(Space.active()!);
+
+    const workspace = currentSpace.getWorkspaceByWindow(window);
 
     if (!workspace) return;
 
@@ -47,13 +50,59 @@ class TilingSpace implements ITilingSpace {
   };
 
   focusNextWindowInWorkspace = (window: TilingWindow) => {
-    const workspace = this.getWorkspaceByWindow(window);
+    const currentSpace = TilingSpace.of(Space.active()!);
+
+    const workspace = currentSpace.getWorkspaceByWindow(window);
 
     if (!workspace) return;
 
     const index = workspace.findIndex((win) => win.id === window.id);
 
     workspace[index + 1 > workspace.length - 1 ? 0 : index + 1]?.focus();
+  };
+
+  swapToLeft = (window: TilingWindow) => {
+    const currentSpace = TilingSpace.of(Space.active()!);
+
+    if (!currentSpace.workspace1.find((win) => win.id === window.id)) return;
+
+    [currentSpace.workspace1, currentSpace.workspace2] = [currentSpace.workspace2, currentSpace.workspace1];
+
+    currentSpace.arrangeAllWindowsToGrid();
+  };
+
+  swapToRight = (window: TilingWindow) => {
+    const currentSpace = TilingSpace.of(Space.active()!);
+
+    if (!currentSpace.workspace2.find((win) => win.id === window.id)) return;
+
+    [currentSpace.workspace1, currentSpace.workspace2] = [currentSpace.workspace2, currentSpace.workspace1];
+
+    currentSpace.arrangeAllWindowsToGrid();
+  };
+
+  insertToLeft = (window: TilingWindow) => {
+    const currentSpace = TilingSpace.of(Space.active()!);
+
+    let idx: number = -1;
+    if ((idx = currentSpace.workspace1.findIndex((win) => win.id === window.id)) !== -1) {
+      currentSpace.workspace1.splice(idx, 1);
+      currentSpace.workspace2.push(window);
+    }
+
+    currentSpace.arrangeAllWindowsToGrid();
+  };
+
+  insertToRight = (window: TilingWindow) => {
+    const currentSpace = TilingSpace.of(Space.active()!);
+
+    let idx: number = -1;
+    if ((idx = currentSpace.workspace2.findIndex((win) => win.id === window.id)) !== -1) {
+      currentSpace.workspace2.splice(idx, 1);
+      currentSpace.workspace1.push(window);
+    }
+
+    currentSpace.arrangeAllWindowsToGrid();
   };
 
   arrangeAllWindowsInWorkspaces = (windows: TilingWindow[]) => {
@@ -95,6 +144,12 @@ class TilingSpace implements ITilingSpace {
   clearWorkspaces = () => {
     this.workspace1 = [];
     this.workspace2 = [];
+  };
+
+  resetWindowsMode = () => {
+    this.windows().forEach((win) => {
+      win.reset();
+    });
   };
 
   info = () => {

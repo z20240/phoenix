@@ -53,6 +53,11 @@ class TilingWindow implements ITilingWindow {
   focus = () => this.window.focus();
   focusClosestNeighbor = (direction: Phoenix.Direction) => this.window.focusClosestNeighbor(direction);
   close = () => this.window.close();
+  reset = () => {
+    this.isStack = false;
+    this.currentPosition = '';
+    this.isFloating = FLOATING_APPS.includes(this.window.app().name());
+  };
 
   topLeft = () => this.window.topLeft();
   topRight = () =>
@@ -154,10 +159,12 @@ class TilingWindow implements ITilingWindow {
 
   changeGridWidth = (n: number) => {
     let frame = this.getGrid();
-    if (n > 0) frame.width = Math.min(frame.width + n, GRID_WIDTH);
-    else frame.width = Math.max(frame.width + n, 1);
+    console.log('🚀 ~ file: tilingWindow.ts:162 ~ TilingWindow ~ frame:', frame.x, frame.y, frame.width, frame.height);
+    if (n > 0) frame.width = Math.min(Math.round(frame.width + n), GRID_WIDTH);
+    else frame.width = Math.max(Math.round(frame.width + n), 1);
+    console.log('🚀 ~ file: tilingWindow.ts:164 ~ TilingWindow ~ frame.width:', frame.width);
 
-    return this.setGrid(frame);
+    return this.setGrid(frame, Screen.main());
   };
 
   changeGridHeight = (n: number) => {

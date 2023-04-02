@@ -2,6 +2,7 @@ const cmd_opt = ['cmd', 'alt'] as Phoenix.ModifierKey[];
 const ctrl_cmd = ['ctrl', 'cmd'] as Phoenix.ModifierKey[];
 const ctrl_opt = ['ctrl', 'alt'] as Phoenix.ModifierKey[];
 const ctrl_opt_cmd = ['ctrl', 'alt', 'cmd'] as Phoenix.ModifierKey[];
+const shift_opt_cmd = ['shift', 'alt', 'cmd'] as Phoenix.ModifierKey[];
 
 /**
  * Key bindings configuration
@@ -119,6 +120,26 @@ const KeyBindingConfig: IKeyBindingConfig[] = [
     description: 'Arrange Windows',
     keybinding: 'R - ctrl+alt+cmd',
     action: () => windowManagement.arrangeAllWindows(),
+  },
+  {
+    description: 'swap the workspace left',
+    keybinding: 'right - ctrl+alt+cmd',
+    action: () => windowManagement.swapToLeft(),
+  },
+  {
+    description: 'swap the workspace right',
+    keybinding: 'left - ctrl+alt+cmd',
+    action: () => windowManagement.swapToRight(),
+  },
+  {
+    description: 'insert the window to workspace left',
+    keybinding: 'right - shift+alt+cmd',
+    action: () => windowManagement.insertToLeft(),
+  },
+  {
+    description: 'insert the window to workspace right',
+    keybinding: 'left - shift+alt+cmd',
+    action: () => windowManagement.insertToRight(),
   },
 ];
 
