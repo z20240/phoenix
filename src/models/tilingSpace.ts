@@ -29,7 +29,6 @@ class TilingSpace implements ITilingSpace {
   getVisibleWindows = () => this.windows().filter((win) => !win.isFloating && !win.isMinimized());
 
   focusLeft = () => {
-    console.log('--> window');
     Window.at({ x: this.screenCenterPoint.x - GAP_X * 5, y: this.screenCenterPoint.y })?.focus();
   };
 
