@@ -182,6 +182,8 @@ class WindowManagement {
 
   /** mouse move window to next workspace */
   arrangeWindowByDrag = (oldSpace: TilingSpace, newSpace: TilingSpace, currentWindow: TilingWindow, point: Point) => {
+    if (currentWindow.isFloating) return;
+
     this.arrangeAllWindows();
 
     oldSpace.removeWindowFromWorkspace(currentWindow);

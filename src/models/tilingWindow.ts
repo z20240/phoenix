@@ -109,10 +109,10 @@ class TilingWindow implements ITilingWindow {
 
   getGrid = () => {
     let frame = this.window.frame();
-    let [boxHeight, boxWidth] = this.getBoxSize();
+    let [boxWidth, boxHeight] = this.getBoxSize();
     let grid = {
-      y: Math.round((frame.y - this.screenFrame().y) / boxHeight),
       x: Math.round((frame.x - this.screenFrame().x) / boxWidth),
+      y: Math.round((frame.y - this.screenFrame().y) / boxHeight),
       width: Math.max(1, Math.round(frame.width / boxWidth)),
       height: Math.max(1, Math.round(frame.height / boxHeight)),
     } as Rectangle;
@@ -121,7 +121,7 @@ class TilingWindow implements ITilingWindow {
   };
 
   getBoxSize = () => {
-    return [this.screenFrame().width / GRID_WIDTH, this.screenFrame().height / GRID_HEIGHT];
+    return [Math.round((this.screenFrame().width - 2 * GAP_X) / GRID_WIDTH), Math.round((this.screenFrame().height - 2 * GAP_Y) / GRID_HEIGHT)];
   };
 
   calculateGrid = ({ x, y, width, height }: Rectangle, screen?: Screen) => {
@@ -159,12 +159,10 @@ class TilingWindow implements ITilingWindow {
 
   changeGridWidth = (n: number) => {
     let frame = this.getGrid();
-    console.log('🚀 ~ file: tilingWindow.ts:162 ~ TilingWindow ~ frame:', frame.x, frame.y, frame.width, frame.height);
-    if (n > 0) frame.width = Math.min(Math.round(frame.width + n), GRID_WIDTH);
-    else frame.width = Math.max(Math.round(frame.width + n), 1);
-    console.log('🚀 ~ file: tilingWindow.ts:164 ~ TilingWindow ~ frame.width:', frame.width);
+    if (n > 0) frame.width = Math.min(frame.width + n, GRID_WIDTH);
+    else frame.width = Math.max(frame.width + n, 1);
 
-    return this.setGrid(frame, Screen.main());
+    return this.setGrid(frame);
   };
 
   changeGridHeight = (n: number) => {
@@ -235,11 +233,12 @@ class TilingWindow implements ITilingWindow {
     screen = screen || this.window.screen();
     gridWidth = this.screenFrame().width / GRID_WIDTH;
     gridHeight = this.screenFrame().height / GRID_HEIGHT;
+
     return this.window.setFrame({
       y: y * gridHeight + this.screenFrame(screen).y + GAP_Y,
       x: x * gridWidth + this.screenFrame(screen).x + GAP_X,
-      width: width * gridWidth - GAP_X * 2.0,
-      height: height * gridHeight - GAP_Y * 2.0,
+      width: Math.round(width * gridWidth) - GAP_X * 2.0,
+      height: Math.round(height * gridHeight) - GAP_Y * 2.0,
     });
   };
 
