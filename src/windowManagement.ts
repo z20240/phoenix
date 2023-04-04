@@ -44,6 +44,8 @@ class WindowManagement {
     const window = this.currentWindow();
     this.event.on('appDidLaunch', (app) => callback(window, app));
     this.event.on('appDidShow', (app) => callback(window, app));
+    this.event.on('appDidHide', (app) => callback(window, app));
+    this.event.on('appDidTerminate', (app) => callback(window, app));
   };
 
   arrangeAllWindows = () => {
@@ -51,12 +53,16 @@ class WindowManagement {
       space.clearWorkspaces();
       space.resetWindowsMode();
 
-      const windows = space.getVisibleWindows();
-
-      space.arrangeAllWindowsInWorkspaces(windows);
-      space.arrangeAllWindowsToGrid();
+      this.arrangeTheWindowsToSpce(space, space.getVisibleWindows());
     });
   };
+
+  arrangeTheWindowsToSpce = (space: TilingSpace, windows: TilingWindow[]) => {
+    space.arrangeAllWindowsInWorkspaces(windows);
+    space.arrangeAllWindowsToGrid();
+  };
+
+  renderIconInworkspace = (space: TilingSpace) => {};
 
   /** toggle to maximized the window or not */
   toggleMaximizeWindow = () => this.currentWindow()?.toggleMaximize();
@@ -122,8 +128,7 @@ class WindowManagement {
     nextScreen.currentSpace()?.moveWindows([this.currentWindow()!.window]);
 
     const tSpace = TilingSpace.of(nextScreen.currentSpace()!);
-    tSpace.arrangeAllWindowsInWorkspaces(tSpace.getVisibleWindows());
-    tSpace.arrangeAllWindowsToGrid();
+    this.arrangeTheWindowsToSpce(tSpace, tSpace.getVisibleWindows());
   };
 
   /** move window to previous screen */
@@ -136,8 +141,7 @@ class WindowManagement {
     lastScreen.currentSpace()?.moveWindows([this.currentWindow()!.window]);
 
     const tSpace = TilingSpace.of(lastScreen.currentSpace()!);
-    tSpace.arrangeAllWindowsInWorkspaces(tSpace.getVisibleWindows());
-    tSpace.arrangeAllWindowsToGrid();
+    this.arrangeTheWindowsToSpce(tSpace, tSpace.getVisibleWindows());
   };
 
   /** move window to next space */
@@ -155,9 +159,7 @@ class WindowManagement {
     this.currentWindow()?.focus();
 
     this.arrangeAllWindows();
-
-    this.currentSpace()?.arrangeAllWindowsInWorkspaces(this.currentSpace()?.getVisibleWindows()!);
-    this.currentSpace()?.arrangeAllWindowsToGrid();
+    this.arrangeTheWindowsToSpce(this.currentSpace()!, this.currentSpace()?.getVisibleWindows()!);
   };
 
   /** move window to previous space */

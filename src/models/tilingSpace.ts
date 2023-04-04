@@ -29,11 +29,23 @@ class TilingSpace implements ITilingSpace {
   getVisibleWindows = () => this.windows().filter((win) => !win.isFloating && !win.isMinimized());
 
   focusLeft = () => {
-    Window.at({ x: this.screenCenterPoint.x - GAP_X * 5, y: this.screenCenterPoint.y })?.focus();
+    const uponWindow = Window.at({ x: this.screenCenterPoint.x - GAP_X * 5, y: this.screenCenterPoint.y });
+    console.log('🚀 ~ file: tilingSpace.ts:33 ~ TilingSpace ~ uponWindow:', uponWindow?.hash());
+
+    if (!uponWindow) return;
+    const targetWorkspace = this.workspace1.find((win) => win.id === TilingWindow.of(uponWindow).id);
+    console.log('🚀 ~ file: tilingSpace.ts:37 ~ TilingSpace ~ targetWorkspace:', targetWorkspace?.title());
+    targetWorkspace?.focus();
   };
 
   focusRight = () => {
-    Window.at({ x: this.screenCenterPoint.x + GAP_X * 5, y: this.screenCenterPoint.y })?.focus();
+    const uponWindow = Window.at({ x: this.screenCenterPoint.x + GAP_X * 5, y: this.screenCenterPoint.y });
+    console.log('🚀 ~ file: tilingSpace.ts:41 ~ TilingSpace ~ uponWindow:', uponWindow?.hash());
+
+    if (!uponWindow) return;
+    const targetWorkspace = this.workspace2.find((win) => win.id === TilingWindow.of(uponWindow).id);
+    console.log('🚀 ~ file: tilingSpace.ts:47 ~ TilingSpace ~ targetWorkspace:', targetWorkspace?.title());
+    targetWorkspace?.focus();
   };
 
   focusPrevWindowInWorkspace = (window: TilingWindow) => {

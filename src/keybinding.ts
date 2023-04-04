@@ -1,4 +1,5 @@
 const cmd_opt = ['cmd', 'alt'] as Phoenix.ModifierKey[];
+const shift_cmd = ['shift', 'cmd'] as Phoenix.ModifierKey[];
 const ctrl_cmd = ['ctrl', 'cmd'] as Phoenix.ModifierKey[];
 const ctrl_opt = ['ctrl', 'alt'] as Phoenix.ModifierKey[];
 const ctrl_opt_cmd = ['ctrl', 'alt', 'cmd'] as Phoenix.ModifierKey[];
@@ -118,7 +119,7 @@ const KeyBindingConfig: IKeyBindingConfig[] = [
   },
   {
     description: 'Arrange Windows',
-    keybinding: 'R - ctrl+alt+cmd',
+    keybinding: 'R - shift+cmd',
     action: () => windowManagement.arrangeAllWindows(),
   },
   {
